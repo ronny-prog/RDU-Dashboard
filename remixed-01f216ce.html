@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RDU Command Centre</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #f5f6f8;
+    --surface:   #ffffff;
+    --surface2:  #f0f1f4;
+    --border:    #e4e6eb;
+    --border2:   #d1d5db;
+
+    --text:      #111827;
+    --muted:     #6b7280;
+    --subtle:    #9ca3af;
+
+    --blue:      #2563eb;
+    --blue-dim:  #eff6ff;
+    --blue-mid:  #dbeafe;
+    --green:     #059669;
+    --green-dim: #f0fdf4;
+    --green-mid: #d1fae5;
+    --amber:     #d97706;
+    --amber-dim: #fffbeb;
+    --amber-mid: #fde68a;
+    --red:       #dc2626;
+    --red-dim:   #fef2f2;
+    --purple:    #7c3aed;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow:    0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .wrap {
+    width:100vw; height:100vh;
+    display:grid;
+    grid-template-rows: 56px 1fr 1fr 28px;
+    grid-template-columns: 210px 1fr 1fr 180px;
+    gap:10px;
+    padding:14px 16px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    grid-column:1/-1;
+    display:flex; justify-content:space-between; align-items:center;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:0 16px;
+    box-shadow:var(--shadow-sm);
+    animation:fadeUp 0.3s ease both;
+  }
+
+  .logo-block { display:flex; align-items:center; gap:12px; }
+  .logo-mark {
+    width:32px; height:32px;
+    background:linear-gradient(135deg, var(--blue), var(--purple));
+    border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; flex-shrink:0;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  }
+  .logo-title {
+    font-size:1rem; font-weight:700; color:var(--text);
+    letter-spacing:-0.01em; line-height:1;
+  }
+  .logo-sub {
+    font-family:'JetBrains Mono',monospace;
+    font-size:0.46rem; color:var(--subtle);
+    letter-spacing:0.1em; margin-top:3px;
+  }
+
+  .header-centre { display:flex; gap:8px; align-items:center; }
+  .status-pill {
+    display:flex; align-items:center; gap:5px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:20px; padding:3px 9px;
+    font-size:0.5rem; font-weight:500; letter-spacing:0.06em; color:var(--muted);
+  }
+  .status-dot {
+    width:5px; height:5px; border-radius:50%;
+    background:var(--green); animation:pulse 2.5s infinite;
+  }
+  .status-dot.amber { background:var(--amber); }
+  .status-dot.blue  { background:var(--blue); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  .header-right { text-align:right; }
+  .live-time {
+    font-family:'JetBrains Mono',monospace; font-size:1.4rem; font-weight:500;
+    color:var(--text); line-height:1; letter-spacing:0.02em;
+  }
+  .live-date { font-size:0.44rem; color:var(--subtle); letter-spacing:0.1em; margin-top:2px; font-family:'JetBrains Mono',monospace; }
+
+  /* ── FOOTER ── */
+  footer {
+    grid-column:1/-1;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0 4px;
+  }
+  .footer-left { font-size:0.43rem; letter-spacing:0.12em; color:var(--subtle); font-family:'JetBrains Mono',monospace; }
+  .footer-right { display:flex; gap:14px; }
+  .footer-tag { font-size:0.43rem; letter-spacing:0.08em; color:var(--subtle); }
+
+  /* ── PANELS ── */
+  .panel {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+    position:relative; overflow:hidden;
+    display:flex; flex-direction:column;
+    box-shadow:var(--shadow-sm);
+    animation:fadeUp 0.3s ease both;
+    transition:box-shadow 0.2s, border-color 0.2s;
+  }
+  .panel:hover { box-shadow:var(--shadow); border-color:var(--border2); }
+
+  .panel-label {
+    font-size:0.5rem; font-weight:600; letter-spacing:0.12em;
+    color:var(--subtle); text-transform:uppercase;
+    margin-bottom:10px;
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+  }
+  .panel-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── LAUNCHER ── */
+  .launcher { grid-column:1; grid-row:2/4; animation-delay:0.05s; }
+
+  .app-btn {
+    display:flex; align-items:center; gap:9px;
+    padding:6px 9px;
+    background:transparent; border:1px solid var(--border);
+    border-radius:7px; cursor:pointer; text-decoration:none;
+    color:var(--muted); font-family:'Inter',sans-serif;
+    font-size:0.63rem; font-weight:500;
+    transition:all 0.15s ease; flex-shrink:0;
+  }
+  .app-btn:hover { background:var(--surface2); border-color:var(--border2); color:var(--text); transform:translateX(2px); }
+  .app-btn.blue:hover  { background:var(--blue-dim);  border-color:var(--blue-mid);  color:var(--blue); }
+  .app-btn.green:hover { background:var(--green-dim); border-color:var(--green-mid); color:var(--green); }
+  .app-btn.amber:hover { background:var(--amber-dim); border-color:var(--amber-mid); color:var(--amber); }
+
+  .app-icon { font-size:0.85rem; flex-shrink:0; width:20px; text-align:center; }
+  .app-info { flex:1; }
+  .app-name { display:block; }
+  .app-desc { font-size:0.42rem; color:var(--subtle); font-weight:400; margin-top:1px; }
+  .app-arrow { font-size:0.5rem; opacity:0; transition:opacity 0.15s; }
+  .app-btn:hover .app-arrow { opacity:0.5; }
+  .apps-grid { display:flex; flex-direction:column; gap:4px; flex:1; justify-content:space-between; }
+
+  .note-input {
+    width:100%; background:var(--surface2);
+    border:1px solid var(--border); border-radius:7px;
+    color:var(--text); font-family:'JetBrains Mono',monospace;
+    font-size:0.56rem; padding:8px; resize:none; outline:none;
+    letter-spacing:0.01em; line-height:1.7;
+    transition:border-color 0.15s, box-shadow 0.15s; min-height:60px;
+  }
+  .note-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,0.08); background:var(--surface); }
+  .note-input::placeholder { color:var(--subtle); }
+
+  /* ── WEATHER ── */
+  .weather-panel { grid-column:2; grid-row:2; animation-delay:0.1s; }
+  .weather-main { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+  .weather-icon { font-size:2.5rem; }
+  .weather-temp { font-size:2.3rem; font-weight:700; color:var(--text); line-height:1; }
+  .weather-temp span { font-size:1rem; font-weight:400; color:var(--muted); }
+  .weather-desc { font-size:0.6rem; color:var(--muted); letter-spacing:0.04em; margin-top:3px; font-weight:500; }
+  .weather-loc { font-size:0.46rem; color:var(--subtle); letter-spacing:0.1em; margin-top:2px; font-family:'JetBrains Mono',monospace; }
+  .weather-stats { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .w-stat { background:var(--surface2); border:1px solid var(--border); padding:7px 9px; border-radius:7px; }
+  .w-stat-label { font-size:0.42rem; letter-spacing:0.12em; color:var(--subtle); margin-bottom:3px; font-weight:600; text-transform:uppercase; }
+  .w-stat-val { font-size:1rem; font-weight:600; color:var(--text); }
+  .weather-loading { color:var(--subtle); font-size:0.58rem; text-align:center; margin:auto; font-family:'JetBrains Mono',monospace; }
+
+  /* ── MOTTO ── */
+  .motto-panel { grid-column:3; grid-row:2; animation-delay:0.15s; justify-content:center; align-items:center; text-align:center; }
+  .motto-icon { font-size:2rem; margin-bottom:10px; }
+  .motto { font-size:1.3rem; font-weight:700; color:var(--text); line-height:1.6; letter-spacing:-0.01em; }
+  .motto .accent-blue  { color:var(--blue); }
+  .motto .accent-green { color:var(--green); }
+  .motto-badges { display:flex; gap:6px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+  .mbadge {
+    padding:3px 9px; border-radius:20px; font-size:0.46rem;
+    font-weight:600; letter-spacing:0.06em; text-transform:uppercase;
+  }
+  .mbadge.blue  { background:var(--blue-dim);  color:var(--blue);  border:1px solid var(--blue-mid); }
+  .mbadge.green { background:var(--green-dim); color:var(--green); border:1px solid var(--green-mid); }
+  .mbadge.amber { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-mid); }
+  .motto-sub { font-size:0.46rem; letter-spacing:0.16em; color:var(--subtle); margin-top:10px; font-family:'JetBrains Mono',monospace; }
+
+  /* ── TASKS ── */
+  .tasks-panel { grid-column:4; grid-row:2; animation-delay:0.2s; }
+  .task-list { display:flex; flex-direction:column; gap:2px; flex:1; overflow-y:auto; }
+  .task-item {
+    display:flex; align-items:flex-start; gap:8px;
+    font-size:0.59rem; color:var(--muted); font-weight:400;
+    padding:6px 7px; border-radius:6px; cursor:pointer; transition:all 0.15s;
+  }
+  .task-item:hover { background:var(--surface2); color:var(--text); }
+  .task-check {
+    width:14px; height:14px; min-width:14px;
+    border:1.5px solid var(--border2); border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:8px; transition:all 0.15s; color:#fff;
+  }
+  .task-item.done .task-check { background:var(--green); border-color:var(--green); }
+  .task-item.done .task-text { text-decoration:line-through; opacity:0.35; }
+  .task-text { flex:1; line-height:1.4; }
+
+  /* ── JOB TRACKER ── */
+  .jobs-panel { grid-column:2/4; grid-row:3; animation-delay:0.25s; }
+  .jobs-table-wrap { flex:1; overflow-y:auto; }
+  table { width:100%; border-collapse:collapse; font-size:0.59rem; }
+  th {
+    font-size:0.44rem; font-weight:600; letter-spacing:0.12em;
+    color:var(--subtle); text-transform:uppercase;
+    padding:4px 10px; border-bottom:1px solid var(--border); text-align:left;
+  }
+  td { padding:6px 10px; border-bottom:1px solid var(--border); color:var(--muted); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:var(--surface2); color:var(--text); }
+  .badge {
+    display:inline-block; padding:2px 8px; border-radius:20px;
+    font-size:0.43rem; letter-spacing:0.06em; text-transform:uppercase; font-weight:600;
+  }
+  .badge.active  { background:var(--green-dim); color:var(--green); border:1px solid var(--green-mid); }
+  .badge.quoted  { background:var(--blue-dim);  color:var(--blue);  border:1px solid var(--blue-mid); }
+  .badge.pending { background:var(--amber-dim); color:var(--amber); border:1px solid var(--amber-mid); }
+  .badge.complete{ background:var(--surface2);  color:var(--muted); border:1px solid var(--border2); }
+
+  .add-row { display:flex; gap:6px; margin-top:8px; flex-shrink:0; }
+  .add-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); font-family:'Inter',sans-serif; font-size:0.57rem;
+    padding:6px 9px; outline:none; border-radius:7px; transition:all 0.15s;
+  }
+  .add-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,0.08); background:var(--surface); }
+  .add-input::placeholder { color:var(--subtle); }
+  .add-input option { background:var(--surface); }
+  .add-btn {
+    background:var(--blue); border:none; color:#fff;
+    font-family:'Inter',sans-serif; font-weight:600;
+    font-size:0.57rem; padding:6px 14px; cursor:pointer;
+    border-radius:7px; letter-spacing:0.04em; transition:all 0.15s; white-space:nowrap;
+    box-shadow:0 1px 3px rgba(37,99,235,0.3);
+  }
+  .add-btn:hover { background:#1d4ed8; box-shadow:0 2px 8px rgba(37,99,235,0.35); }
+
+  /* ── SALES ── */
+  .sales-panel { grid-column:4; grid-row:3; animation-delay:0.3s; }
+  .sales-stat { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 10px; margin-bottom:6px; }
+  .sales-label { font-size:0.43rem; font-weight:600; letter-spacing:0.12em; color:var(--subtle); margin-bottom:3px; text-transform:uppercase; }
+  .sales-value { font-size:1.2rem; font-weight:700; }
+  .sales-value.green { color:var(--green); }
+  .sales-value.blue  { color:var(--blue); }
+  .sales-value.amber { color:var(--amber); }
+  .progress-bar-wrap { margin-top:5px; height:4px; background:var(--border); border-radius:4px; overflow:hidden; }
+  .progress-bar { height:100%; background:linear-gradient(90deg, var(--blue), var(--green)); border-radius:4px; transition:width 0.5s ease; }
+  .sales-target-label { font-size:0.42rem; color:var(--subtle); margin-top:4px; }
+  .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:6px; }
+  .mini-stat { background:var(--surface2); border:1px solid var(--border); padding:7px 9px; border-radius:8px; }
+  .sales-edit-row { display:flex; gap:5px; margin-top:4px; }
+  .sales-input {
+    flex:1; background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); font-family:'JetBrains Mono',monospace; font-size:0.54rem;
+    padding:5px 8px; outline:none; border-radius:7px; transition:all 0.15s;
+  }
+  .sales-input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(37,99,235,0.08); background:var(--surface); }
+  .sales-input::placeholder { color:var(--subtle); }
+  .sales-btn {
+    background:var(--green); border:none; color:#fff;
+    font-family:'Inter',sans-serif; font-weight:600;
+    font-size:0.54rem; padding:5px 10px; cursor:pointer;
+    border-radius:7px; transition:all 0.15s; white-space:nowrap;
+    box-shadow:0 1px 3px rgba(5,150,105,0.3);
+  }
+  .sales-btn:hover { background:#047857; }
+
+  ::-webkit-scrollbar { width:3px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-block">
+      <div class="logo-mark">🏠</div>
+      <div>
+        <div class="logo-title">Roofing Down Under</div>
+        <div class="logo-sub">COMMAND CENTRE v3.0 &nbsp;·&nbsp; RONNY LEE COULING &nbsp;·&nbsp; LIC 352581C &nbsp;·&nbsp; ABN 96 899 143 964</div>
+      </div>
+    </div>
+    <div class="header-centre">
+      <div class="status-pill"><div class="status-dot"></div>Systems Online</div>
+      <div class="status-pill"><div class="status-dot blue"></div>ABN Active</div>
+      <div class="status-pill"><div class="status-dot amber"></div>VA Connected</div>
+    </div>
+    <div class="header-right">
+      <div class="live-time" id="clock">--:--:--</div>
+      <div class="live-date" id="dateDisplay">LOADING...</div>
+    </div>
+  </header>
+
+  <!-- LAUNCHER + NOTES -->
+  <div class="panel launcher">
+    <div class="panel-label">Quick Launch</div>
+    <div class="apps-grid">
+      <a href="https://go.xero.com"         target="_blank" class="app-btn blue"><span class="app-icon">💼</span><div class="app-info"><span class="app-name">Xero</span><span class="app-desc">Invoicing &amp; Accounts</span></div><span class="app-arrow">›</span></a>
+      <a href="https://app.roofr.com"       target="_blank" class="app-btn amber"><span class="app-icon">🏠</span><div class="app-info"><span class="app-name">Roofr</span><span class="app-desc">Quoting &amp; Proposals</span></div><span class="app-arrow">›</span></a>
+      <a href="https://web.whatsapp.com"    target="_blank" class="app-btn green"><span class="app-icon">💬</span><div class="app-info"><span class="app-name">WhatsApp</span><span class="app-desc">Team &amp; Client Comms</span></div><span class="app-arrow">›</span></a>
+      <a href="https://drive.google.com"    target="_blank" class="app-btn blue"><span class="app-icon">📁</span><div class="app-info"><span class="app-name">Google Drive</span><span class="app-desc">Files &amp; SOPs</span></div><span class="app-arrow">›</span></a>
+      <a href="https://mail.google.com"     target="_blank" class="app-btn amber"><span class="app-icon">✉️</span><div class="app-info"><span class="app-name">Gmail</span><span class="app-desc">Email</span></div><span class="app-arrow">›</span></a>
+      <a href="https://calendar.google.com" target="_blank" class="app-btn blue"><span class="app-icon">📅</span><div class="app-info"><span class="app-name">Calendar</span><span class="app-desc">Schedule &amp; Jobs</span></div><span class="app-arrow">›</span></a>
+      <a href="https://claude.ai"           target="_blank" class="app-btn green"><span class="app-icon">🤖</span><div class="app-info"><span class="app-name">Claude</span><span class="app-desc">AI Operations</span></div><span class="app-arrow">›</span></a>
+      <a href="https://open.spotify.com"    target="_blank" class="app-btn"><span class="app-icon">🎵</span><div class="app-info"><span class="app-name">Spotify</span><span class="app-desc">Focus Mode</span></div><span class="app-arrow">›</span></a>
+      <a href="https://www.instagram.com"   target="_blank" class="app-btn amber"><span class="app-icon">📸</span><div class="app-info"><span class="app-name">Instagram</span><span class="app-desc">Brand &amp; Build</span></div><span class="app-arrow">›</span></a>
+    </div>
+    <div style="margin-top:10px;">
+      <div class="panel-label">Notes</div>
+      <textarea class="note-input" placeholder="Quick notes...&#10;Rocky registration 🐾&#10;Follow up legal team&#10;Toneth workflows"></textarea>
+    </div>
+  </div>
+
+  <!-- WEATHER -->
+  <div class="panel weather-panel">
+    <div class="panel-label">Weather — Sutherland Shire</div>
+    <div id="weatherContent" class="weather-loading">Fetching conditions...</div>
+  </div>
+
+  <!-- MOTTO -->
+  <div class="panel motto-panel">
+    <div class="motto-icon">🐾</div>
+    <div class="motto">Cattle Dogs.<br><span class="accent-blue">Roofing.</span><br><span class="accent-green">Repeat.</span></div>
+    <div class="motto-badges">
+      <span class="mbadge blue">NSW Contractor</span>
+      <span class="mbadge green">Licensed</span>
+      <span class="mbadge amber">Sutherland Shire</span>
+    </div>
+    <div class="motto-sub">RONNY LEE COULING &nbsp;·&nbsp; ROOFINGDOWNUNDER.NET</div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="panel tasks-panel">
+    <div class="panel-label">Today's Tasks</div>
+    <div class="task-list" id="taskList">
+      <div class="task-item" onclick="toggleTask(this)"><div class="task-check">✓</div><span class="task-text">Register Rocky 🐾</span></div>
+      <div class="task-item" onclick="toggleTask(this)"><div class="task-check">✓</div><span class="task-text">Personal errands run</span></div>
+      <div class="task-item" onclick="toggleTask(this)"><div class="task-check">✓</div><span class="task-text">Review Toneth workflows</span></div>
+      <div class="task-item" onclick="toggleTask(this)"><div class="task-check">✓</div><span class="task-text">Check invoices (Xero)</span></div>
+      <div class="task-item" onclick="toggleTask(this)"><div class="task-check">✓</div><span class="task-text">Follow up legal team</span></div>
+      <div class="task-item" onclick="toggleTask(this)"><div class="task-check">✓</div><span class="task-text">Phone Link setup</span></div>
+    </div>
+  </div>
+
+  <!-- JOB TRACKER -->
+  <div class="panel jobs-panel">
+    <div class="panel-label">Job Tracker — Active Sites</div>
+    <div class="jobs-table-wrap">
+      <table id="jobTable">
+        <thead><tr><th>Job / Client</th><th>Type</th><th>Value</th><th>Stage</th><th></th></tr></thead>
+        <tbody id="jobBody">
+          <tr><td>South Grafton Public School</td><td>Commercial</td><td>$145.50/m²</td><td><span class="badge quoted">Quoted</span></td><td><button onclick="removeJob(this)" style="background:none;border:none;color:var(--subtle);cursor:pointer;font-size:0.7rem;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--subtle)'">✕</button></td></tr>
+          <tr><td>Royal Contractors — Grafton</td><td>Builder Sub</td><td>TBC</td><td><span class="badge pending">Pending</span></td><td><button onclick="removeJob(this)" style="background:none;border:none;color:var(--subtle);cursor:pointer;font-size:0.7rem;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--subtle)'">✕</button></td></tr>
+          <tr><td>600m Commercial Guttering</td><td>Commercial</td><td>TBC</td><td><span class="badge active">Active</span></td><td><button onclick="removeJob(this)" style="background:none;border:none;color:var(--subtle);cursor:pointer;font-size:0.7rem;transition:color 0.15s;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--subtle)'">✕</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="add-row">
+      <input class="add-input" id="jobName" placeholder="Job / Client name..." style="flex:2">
+      <input class="add-input" id="jobType" placeholder="Type...">
+      <input class="add-input" id="jobValue" placeholder="$Value...">
+      <select id="jobStage" class="add-input">
+        <option value="quoted">Quoted</option>
+        <option value="active">Active</option>
+        <option value="pending">Pending</option>
+        <option value="complete">Complete</option>
+      </select>
+      <button class="add-btn" onclick="addJob()">+ Add Job</button>
+    </div>
+  </div>
+
+  <!-- SALES -->
+  <div class="panel sales-panel">
+    <div class="panel-label">Sales — This Month</div>
+    <div class="sales-stat">
+      <div class="sales-label">Revenue</div>
+      <div class="sales-value green" id="monthRev">$0</div>
+    </div>
+    <div class="sales-stat">
+      <div class="sales-label">Target Progress</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+      <div class="sales-target-label" id="targetLabel">Set revenue &amp; target below</div>
+    </div>
+    <div class="mini-grid">
+      <div class="mini-stat"><div class="sales-label">Quotes Sent</div><div class="sales-value blue" id="quotesSent">0</div></div>
+      <div class="mini-stat"><div class="sales-label">Jobs Won</div><div class="sales-value amber" id="jobsWon">0</div></div>
+    </div>
+    <div class="sales-edit-row">
+      <input class="sales-input" id="salesRevInput" placeholder="Revenue $...">
+      <button class="sales-btn" onclick="updateSales()">Set</button>
+    </div>
+    <div class="sales-edit-row">
+      <input class="sales-input" id="salesTargetInput" placeholder="Target $...">
+      <button class="sales-btn" onclick="updateTarget()">Target</button>
+    </div>
+    <div class="sales-edit-row">
+      <input class="sales-input" id="quotesInput" placeholder="Quotes #">
+      <input class="sales-input" id="wonInput" placeholder="Won #">
+      <button class="sales-btn" onclick="updateQuotes()">Update</button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">RDU COMMAND CENTRE v3.0 &nbsp;·&nbsp; ROOFINGDOWNUNDER.NET &nbsp;·&nbsp; EST. 2026</div>
+    <div class="footer-right">
+      <span class="footer-tag">NSW CONTRACTOR LIC 352581C</span>
+      <span class="footer-tag">MYLA · TONETH · HARRY · PAULY · JOSH</span>
+      <span class="footer-tag">🐾 CATTLE DOGS. ROOFING. REPEAT.</span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleTimeString('en-AU',{hour12:false});
+  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+}
+updateClock(); setInterval(updateClock,1000);
+
+function toggleTask(el) { el.classList.toggle('done'); }
+
+async function loadWeather() {
+  try {
+    const res = await fetch('https://wttr.in/Sutherland+NSW+Australia?format=j1');
+    const data = await res.json();
+    const c = data.current_condition[0];
+    const desc = c.weatherDesc[0].value, temp=c.temp_C, feels=c.FeelsLikeC, humidity=c.humidity, wind=c.windspeedKmph;
+    const icons={'Sunny':'☀️','Clear':'🌙','Partly cloudy':'⛅','Cloudy':'☁️','Overcast':'☁️','Mist':'🌫️','Rain':'🌧️','Light rain':'🌦️','Heavy rain':'⛈️','Thunder':'⛈️','Snow':'❄️','Fog':'🌫️','Drizzle':'🌦️'};
+    let icon='🌤️';
+    for(const[k,v]of Object.entries(icons)){if(desc.toLowerCase().includes(k.toLowerCase())){icon=v;break;}}
+    const w=parseInt(wind);
+    const roofing=w>45?'<span style="color:var(--red);font-weight:600">Too windy ⚠</span>':w>25?'<span style="color:var(--amber);font-weight:600">Bit breezy</span>':'<span style="color:var(--green);font-weight:600">Good to go ✓</span>';
+    document.getElementById('weatherContent').innerHTML=`
+      <div class="weather-main">
+        <div class="weather-icon">${icon}</div>
+        <div><div class="weather-temp">${temp}<span>°C</span></div>
+        <div class="weather-desc">${desc}</div>
+        <div class="weather-loc">Sutherland Shire, NSW, Australia</div></div>
+      </div>
+      <div class="weather-stats">
+        <div class="w-stat"><div class="w-stat-label">Feels Like</div><div class="w-stat-val">${feels}°C</div></div>
+        <div class="w-stat"><div class="w-stat-label">Humidity</div><div class="w-stat-val">${humidity}%</div></div>
+        <div class="w-stat"><div class="w-stat-label">Wind</div><div class="w-stat-val">${wind} km/h</div></div>
+        <div class="w-stat"><div class="w-stat-label">On the Tools</div><div class="w-stat-val" style="font-size:0.62rem">${roofing}</div></div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('weatherContent').innerHTML='<div class="weather-loading">No signal — check network</div>';
+  }
+}
+loadWeather(); setInterval(loadWeather,600000);
+
+function addJob() {
+  const name=document.getElementById('jobName').value.trim(); if(!name)return;
+  const type=document.getElementById('jobType').value.trim()||'—';
+  const value=document.getElementById('jobValue').value.trim()||'TBC';
+  const stage=document.getElementById('jobStage').value;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${name}</td><td>${type}</td><td>${value}</td><td><span class="badge ${stage}">${stage.charAt(0).toUpperCase()+stage.slice(1)}</span></td><td><button onclick="removeJob(this)" style="background:none;border:none;color:var(--subtle);cursor:pointer;font-size:0.7rem;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--subtle)'">✕</button></td>`;
+  document.getElementById('jobBody').appendChild(tr);
+  ['jobName','jobType','jobValue'].forEach(id=>document.getElementById(id).value='');
+}
+function removeJob(btn){btn.closest('tr').remove();}
+
+let monthTarget=0,currentRev=0;
+function updateSales(){currentRev=parseFloat(document.getElementById('salesRevInput').value.replace(/[$,]/g,''))||0;document.getElementById('monthRev').textContent='$'+currentRev.toLocaleString('en-AU');updateProgress();document.getElementById('salesRevInput').value='';}
+function updateTarget(){monthTarget=parseFloat(document.getElementById('salesTargetInput').value.replace(/[$,]/g,''))||0;updateProgress();document.getElementById('salesTargetInput').value='';}
+function updateProgress(){const pct=monthTarget>0?Math.min(100,Math.round(currentRev/monthTarget*100)):0;document.getElementById('progressBar').style.width=pct+'%';document.getElementById('targetLabel').textContent=`$${currentRev.toLocaleString()} of $${monthTarget.toLocaleString()} (${pct}%)`;}
+function updateQuotes(){const q=document.getElementById('quotesInput').value,w=document.getElementById('wonInput').value;if(q)document.getElementById('quotesSent').textContent=q;if(w)document.getElementById('jobsWon').textContent=w;document.getElementById('quotesInput').value='';document.getElementById('wonInput').value='';}
+</script>
+</body>
+</html>
